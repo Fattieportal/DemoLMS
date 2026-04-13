@@ -9,16 +9,15 @@ const completedLessons = modules.reduce((a, m) => a + m.completedLessons, 0);
 const overallProgress = Math.round((completedLessons / totalLessons) * 100);
 
 const streakDays = [
-  { day: "M", active: true },
-  { day: "T", active: true },
-  { day: "W", active: true },
-  { day: "T", active: true },
-  { day: "F", active: false },
-  { day: "S", active: false },
-  { day: "S", active: false },
+  { day: "Ma", active: true },
+  { day: "Di", active: true },
+  { day: "Wo", active: true },
+  { day: "Do", active: true },
+  { day: "Vr", active: false },
+  { day: "Za", active: false },
+  { day: "Zo", active: false },
 ];
 
-// Find the in-progress module
 const inProgressModule = modules.find(
   (m) => m.completedLessons > 0 && m.completedLessons < m.lessonsCount
 );
@@ -29,23 +28,23 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-xs font-semibold text-violet-500 uppercase tracking-widest mb-0.5">
-            Good morning ☀️
+          <p className="text-xs font-semibold text-blue-500 uppercase tracking-widest mb-0.5">
+            Goedemorgen
           </p>
-          <h1 className="text-2xl font-bold text-gray-800">Alex Johnson</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Thomas de Vries</h1>
         </div>
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-violet-200">
-          A
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
+          T
         </div>
       </div>
 
       {/* Overall progress card */}
-      <div className="bg-gradient-to-br from-violet-500 to-purple-700 rounded-3xl p-5 mb-5 shadow-lg shadow-violet-200 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 mb-5 shadow-lg shadow-blue-200 relative overflow-hidden">
         <div className="absolute -top-8 -right-8 w-36 h-36 bg-white/10 rounded-full" />
         <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-white/10 rounded-full" />
         <div className="relative">
           <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">
-            Overall Progress
+            Jouw voortgang
           </p>
           <p className="text-white text-3xl font-bold mb-3">{overallProgress}%</p>
           <div className="h-2 bg-white/20 rounded-full overflow-hidden mb-3">
@@ -56,7 +55,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-white/70 text-xs">
-              {completedLessons} of {totalLessons} lessons
+              {completedLessons} van {totalLessons} lessen
             </span>
             <span className="text-white/70 text-xs">
               {modules.filter((m) => m.completedLessons === m.lessonsCount).length}/{modules.length} modules
@@ -72,7 +71,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 mb-3">
             <FireIcon className="w-4 h-4 text-orange-400" />
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Streak
+              Leerstreak
             </span>
           </div>
           <div className="flex gap-1 justify-between">
@@ -80,9 +79,7 @@ export default function DashboardPage() {
               <div key={i} className="flex flex-col items-center gap-1">
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
-                    d.active
-                      ? "bg-orange-400 text-white"
-                      : "bg-gray-100 text-gray-300"
+                    d.active ? "bg-orange-400 text-white" : "bg-gray-100 text-gray-300"
                   }`}
                 >
                   {d.active ? "🔥" : ""}
@@ -93,28 +90,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* XP */}
+        {/* Score */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-2">
             <BoltIcon className="w-4 h-4 text-yellow-400" />
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              XP Points
+              Punten
             </span>
           </div>
-          <p className="text-2xl font-bold text-gray-800">1,240</p>
-          <p className="text-xs text-gray-400 mt-0.5">+80 this week</p>
+          <p className="text-2xl font-bold text-gray-800">1.240</p>
+          <p className="text-xs text-gray-400 mt-0.5">+80 deze week</p>
           <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full w-3/5 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full" />
           </div>
-          <p className="text-[10px] text-gray-400 mt-1">760 XP to next level</p>
+          <p className="text-[10px] text-gray-400 mt-1">760 punten tot volgend niveau</p>
         </div>
       </div>
 
-      {/* Continue learning */}
+      {/* Doorgaan */}
       {inProgressModule && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-800 text-base">Continue Learning</h2>
+            <h2 className="font-bold text-gray-800 text-base">Ga verder</h2>
           </div>
           <Link href={`/dashboard/modules/${inProgressModule.id}`}>
             <div
@@ -127,8 +124,8 @@ export default function DashboardPage() {
                   {inProgressModule.title}
                 </h3>
                 <p className="text-white/70 text-xs mb-3">
-                  {inProgressModule.completedLessons} of{" "}
-                  {inProgressModule.lessonsCount} lessons completed
+                  {inProgressModule.completedLessons} van{" "}
+                  {inProgressModule.lessonsCount} lessen afgerond
                 </p>
                 <div className="flex items-center justify-between">
                   <div className="flex-1 h-1.5 bg-white/30 rounded-full overflow-hidden mr-3">
@@ -136,15 +133,13 @@ export default function DashboardPage() {
                       className="h-full bg-white rounded-full"
                       style={{
                         width: `${Math.round(
-                          (inProgressModule.completedLessons /
-                            inProgressModule.lessonsCount) *
-                            100
+                          (inProgressModule.completedLessons / inProgressModule.lessonsCount) * 100
                         )}%`,
                       }}
                     />
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-xl flex items-center gap-1">
-                    <span className="text-white text-xs font-bold">Resume</span>
+                    <span className="text-white text-xs font-bold">Verder</span>
                     <ArrowRightIcon className="w-3 h-3 text-white" />
                   </div>
                 </div>
@@ -154,15 +149,15 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* All modules */}
+      {/* Alle modules */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-gray-800 text-base">All Modules</h2>
+          <h2 className="font-bold text-gray-800 text-base">Modules</h2>
           <Link
             href="/dashboard/modules"
-            className="text-xs text-violet-500 font-semibold hover:text-violet-700"
+            className="text-xs text-blue-500 font-semibold hover:text-blue-700"
           >
-            See all
+            Alle modules
           </Link>
         </div>
         <div className="space-y-3">

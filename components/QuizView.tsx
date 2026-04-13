@@ -1,14 +1,17 @@
 "use client";
-
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Quiz } from "@/lib/types";
 import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
   TrophyIcon,
+} from "@heroicons/react/24/outline";
+import {
+  CheckCircleIcon as CheckCircleSolid,
+  XCircleIcon as XCircleSolid,
 } from "@heroicons/react/24/solid";
 
 interface QuizViewProps {
@@ -17,299 +20,233 @@ interface QuizViewProps {
 }
 
 export default function QuizView({ quiz, moduleId }: QuizViewProps) {
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const router = useRouter();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
   const [finished, setFinished] = useState(false);
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    Array(quiz.questions.length).fill(null)
-  );
 
-  const question = quiz.questions[currentQ];
-  const isCorrect = selectedIndex === question.correctIndex;
-
-  const handleSelect = (idx: number) => {
-    if (confirmed) return;
-    setSelectedIndex(idx);
-  };
+  const question = quiz.questions[currentIndex];
+  const isCorrect = selectedAnswer === question.correctIndex;
+  const score = answers.filter(Boolean).length;
+  const total = quiz.questions.length;
+  const percentage = Math.round((score / total) * 100);
 
   const handleConfirm = () => {
-    if (selectedIndex === null) return;
+    if (selectedAnswer === null) return;
     setConfirmed(true);
-    const newAnswers = [...answers];
-    newAnswers[currentQ] = selectedIndex;
-    setAnswers(newAnswers);
-    if (selectedIndex === question.correctIndex) {
-      setScore((s) => s + 1);
-    }
   };
 
   const handleNext = () => {
-    if (currentQ < quiz.questions.length - 1) {
-      setCurrentQ((q) => q + 1);
-      setSelectedIndex(null);
+    setAnswers((prev) => [...prev, isCorrect]);
+    if (currentIndex + 1 < quiz.questions.length) {
+      setCurrentIndex((i) => i + 1);
+      setSelectedAnswer(null);
       setConfirmed(false);
     } else {
       setFinished(true);
     }
   };
 
-  const handleRetry = () => {
-    setCurrentQ(0);
-    setSelectedIndex(null);
-    setConfirmed(false);
-    setScore(0);
-    setFinished(false);
-    setAnswers(Array(quiz.questions.length).fill(null));
-  };
-
-  const percentage = Math.round((score / quiz.questions.length) * 100);
-
-  // ── Results screen ──────────────────────────────────────────────────────────
   if (finished) {
-    const isPerfect = score === quiz.questions.length;
-    const isGood = percentage >= 60;
+    const resultConfig =
+      percentage === 100
+        ? {
+            emoji: "trophy",
+            title: "Perfecte score!",
+            msg: "Uitstekend! Je hebt alle vragen goed!",
+            bg: "from-yellow-400 to-orange-400",
+          }
+        : percentage >= 60
+        ? {
+            emoji: "party",
+            title: "Goed gedaan!",
+            msg: `Je hebt ${score} van de ${total} vragen goed.`,
+            bg: "from-blue-500 to-indigo-600",
+          }
+        : {
+            emoji: "books",
+            title: "Blijf oefenen!",
+            msg: "Herhaal de stof en probeer het opnieuw.",
+            bg: "from-orange-400 to-red-500",
+          };
 
     return (
-      <div className="page-enter min-h-screen flex flex-col">
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3 shadow-sm">
-          <Link
-            href={`/dashboard/modules/${moduleId}`}
-            className="p-2 -ml-1 rounded-xl hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-          </Link>
-          <p className="text-sm font-bold text-gray-800">{quiz.title}</p>
+      <div className="page-enter px-4 pt-12 pb-8 flex flex-col items-center">
+        <div
+          className={`w-full bg-gradient-to-br ${resultConfig.bg} rounded-3xl p-8 text-center shadow-lg mb-6 relative overflow-hidden`}
+        >
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="relative">
+            <TrophyIcon className="w-16 h-16 text-white/80 mx-auto mb-3" />
+            <h2 className="text-white text-2xl font-black mb-1">{resultConfig.title}</h2>
+            <p className="text-white/80 text-sm mb-4">{resultConfig.msg}</p>
+            <div className="bg-white/20 rounded-2xl p-4">
+              <p className="text-white text-4xl font-black">{percentage}%</p>
+              <p className="text-white/70 text-sm">
+                {score}/{total} correct
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
-          <div
-            className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl mb-5 shadow-lg ${
-              isPerfect
-                ? "bg-gradient-to-br from-yellow-400 to-orange-400"
-                : isGood
-                ? "bg-gradient-to-br from-emerald-400 to-teal-500"
-                : "bg-gradient-to-br from-gray-200 to-gray-300"
-            }`}
-          >
-            {isPerfect ? "🏆" : isGood ? "🎉" : "💪"}
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-800 mb-1">
-            {isPerfect ? "Perfect Score!" : isGood ? "Great Job!" : "Keep Practicing!"}
-          </h2>
-          <p className="text-gray-400 text-sm mb-6">
-            {isPerfect
-              ? "You nailed every question!"
-              : isGood
-              ? "You are on the right track."
-              : "Review the material and try again."}
-          </p>
-
-          {/* Score ring */}
-          <div className="relative w-36 h-36 mb-8">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" fill="none" stroke="#f3f4f6" strokeWidth="8" />
-              <circle
-                cx="50" cy="50" r="42"
-                fill="none"
-                stroke={isPerfect ? "#f59e0b" : isGood ? "#10b981" : "#e5e7eb"}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 42}`}
-                strokeDashoffset={`${2 * Math.PI * 42 * (1 - percentage / 100)}`}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold text-gray-800">{percentage}%</span>
-              <span className="text-xs text-gray-400 font-medium">
-                {score}/{quiz.questions.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Answer review */}
-          <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 text-left">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Review</p>
-            <div className="space-y-2">
-              {quiz.questions.map((q, i) => {
-                const correct = answers[i] === q.correctIndex;
-                return (
-                  <div key={q.id} className="flex items-start gap-2">
-                    {correct ? (
-                      <CheckCircleIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircleIcon className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                    )}
-                    <p className="text-xs text-gray-600 leading-snug line-clamp-2">{q.question}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
+        <div className="w-full space-y-3">
           <button
-            onClick={handleRetry}
-            className="w-full py-3.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold rounded-xl shadow-md shadow-violet-200 active:scale-[0.98] transition-all duration-150 mb-3"
+            onClick={() => {
+              setCurrentIndex(0);
+              setSelectedAnswer(null);
+              setConfirmed(false);
+              setAnswers([]);
+              setFinished(false);
+            }}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-2"
           >
-            Try Again
+            <ArrowRightIcon className="w-4 h-4" />
+            Opnieuw proberen
           </button>
-          <Link
-            href={`/dashboard/modules/${moduleId}`}
-            className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-center block hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
+          <button
+            onClick={() => router.push(`/dashboard/modules/${moduleId}`)}
+            className="w-full py-3.5 rounded-2xl border border-gray-200 text-gray-600 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
           >
-            Back to Module
-          </Link>
+            <ArrowLeftIcon className="w-4 h-4" />
+            Terug naar module
+          </button>
         </div>
       </div>
     );
   }
 
-  // ── Question screen ─────────────────────────────────────────────────────────
   return (
-    <div className="page-enter min-h-screen flex flex-col">
-      {/* Top bar */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3 shadow-sm">
-        <Link
-          href={`/dashboard/modules/${moduleId}`}
-          className="p-2 -ml-1 rounded-xl hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div className="flex-1">
-          <p className="text-xs text-gray-400 font-medium mb-1">
-            Question {currentQ + 1} of {quiz.questions.length}
+    <div className="page-enter pb-8">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-12 pb-6 relative overflow-hidden">
+        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+        <div className="relative">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-white/80 text-sm font-medium hover:text-white mb-3 transition-colors"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            Terug
+          </button>
+          <p className="text-white/60 text-xs mb-1">
+            Vraag {currentIndex + 1} van {total}
           </p>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-500"
-              style={{ width: `${((currentQ + 1) / quiz.questions.length) * 100}%` }}
+              className="h-full bg-white rounded-full transition-all duration-500"
+              style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
             />
           </div>
         </div>
-        <span className="text-sm font-bold text-gray-700 flex items-center gap-1">
-          <TrophyIcon className="w-4 h-4 text-yellow-400" />
-          {score}
-        </span>
       </div>
 
-      <div className="flex-1 px-4 py-6 flex flex-col">
-        {/* Question card */}
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-5">
-          <span className="inline-block text-[10px] font-bold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full uppercase tracking-wide mb-3">
-            Multiple Choice
-          </span>
-          <h2 className="text-base font-bold text-gray-800 leading-snug">
+      <div className="px-4 mt-5 space-y-4">
+        {/* Question */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide">
+              Meerkeuze
+            </span>
+          </div>
+          <p className="text-gray-800 font-semibold text-base leading-snug">
             {question.question}
-          </h2>
+          </p>
         </div>
 
         {/* Options */}
-        <div className="space-y-3 flex-1">
-          {question.options.map((option, idx) => {
-            let style =
-              "border-gray-200 bg-white text-gray-700 hover:border-violet-300 hover:bg-violet-50/50";
+        <div className="space-y-2.5">
+          {question.options.map((opt, i) => {
+            let style = "bg-white border border-gray-200 text-gray-700";
             if (confirmed) {
-              if (idx === question.correctIndex) {
-                style = "border-emerald-400 bg-emerald-50 text-emerald-800";
-              } else if (idx === selectedIndex) {
-                style = "border-red-400 bg-red-50 text-red-800";
-              } else {
-                style = "border-gray-100 bg-gray-50 text-gray-400";
+              if (i === question.correctIndex) {
+                style = "bg-green-50 border-2 border-green-400 text-green-800";
+              } else if (i === selectedAnswer && i !== question.correctIndex) {
+                style = "bg-red-50 border-2 border-red-400 text-red-800";
               }
-            } else if (selectedIndex === idx) {
-              style = "border-violet-500 bg-violet-50 text-violet-800";
+            } else if (selectedAnswer === i) {
+              style = "bg-blue-50 border-2 border-blue-400 text-blue-800";
             }
 
             return (
               <button
-                key={idx}
-                onClick={() => handleSelect(idx)}
+                key={i}
                 disabled={confirmed}
-                className={`w-full px-4 py-3.5 rounded-2xl border-2 text-left text-sm font-medium transition-all duration-150 flex items-center gap-3 ${style} ${
-                  !confirmed ? "active:scale-[0.98] cursor-pointer" : "cursor-default"
+                onClick={() => setSelectedAnswer(i)}
+                className={`w-full text-left px-4 py-3.5 rounded-2xl transition-all duration-200 flex items-center gap-3 ${style} ${
+                  !confirmed ? "active:scale-[0.98] hover:shadow-sm" : ""
                 }`}
               >
-                <span
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
-                    confirmed
-                      ? idx === question.correctIndex
-                        ? "bg-emerald-500 text-white"
-                        : idx === selectedIndex
-                        ? "bg-red-500 text-white"
-                        : "bg-gray-200 text-gray-400"
-                      : selectedIndex === idx
-                      ? "bg-violet-500 text-white"
-                      : "bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  {["A", "B", "C", "D"][idx]}
+                <span className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0 border-current">
+                  {String.fromCharCode(65 + i)}
                 </span>
-                <span className="flex-1">{option}</span>
-                {confirmed && idx === question.correctIndex && (
-                  <CheckCircleIcon className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <span className="text-sm font-medium">{opt}</span>
+                {confirmed && i === question.correctIndex && (
+                  <CheckCircleSolid className="w-5 h-5 text-green-500 ml-auto flex-shrink-0" />
                 )}
-                {confirmed && idx === selectedIndex && idx !== question.correctIndex && (
-                  <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                {confirmed && i === selectedAnswer && i !== question.correctIndex && (
+                  <XCircleSolid className="w-5 h-5 text-red-500 ml-auto flex-shrink-0" />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Explanation after answer */}
+        {/* Feedback */}
         {confirmed && (
           <div
-            className={`mt-4 rounded-2xl p-4 border ${
-              isCorrect ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
+            className={`rounded-2xl p-4 border ${
+              isCorrect
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
             }`}
           >
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1">
               {isCorrect ? (
-                <CheckCircleIcon className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <CheckCircleIcon className="w-5 h-5 text-green-600" />
               ) : (
-                <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                <XCircleIcon className="w-5 h-5 text-red-500" />
               )}
-              <p className={`text-sm font-bold ${isCorrect ? "text-emerald-700" : "text-red-700"}`}>
-                {isCorrect ? "Correct!" : "Not quite"}
+              <p className={`font-bold text-sm ${isCorrect ? "text-green-700" : "text-red-700"}`}>
+                {isCorrect ? "Goed gedaan!" : "Helaas, niet juist."}
               </p>
             </div>
-            <p className={`text-xs leading-relaxed ${isCorrect ? "text-emerald-700" : "text-red-700"}`}>
-              {question.explanation}
-            </p>
+            <p className="text-xs text-gray-600">{question.explanation}</p>
           </div>
         )}
 
-        {/* Action button */}
-        <div className="mt-5">
-          {!confirmed ? (
-            <button
-              onClick={handleConfirm}
-              disabled={selectedIndex === null}
-              className="w-full py-3.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold rounded-xl shadow-md shadow-violet-200 active:scale-[0.98] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Confirm Answer
-            </button>
-          ) : (
-            <button
-              onClick={handleNext}
-              className="w-full py-3.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold rounded-xl shadow-md shadow-violet-200 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
-            >
-              {currentQ < quiz.questions.length - 1 ? (
-                <>
-                  Next Question
-                  <ArrowRightIcon className="w-4 h-4" />
-                </>
-              ) : (
-                <>
-                  See Results
-                  <TrophyIcon className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          )}
-        </div>
+        {/* Buttons */}
+        {!confirmed ? (
+          <button
+            disabled={selectedAnswer === null}
+            onClick={handleConfirm}
+            className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
+              selectedAnswer !== null
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200 active:scale-[0.98]"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Bevestig antwoord
+          </button>
+        ) : (
+          <button
+            onClick={handleNext}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+          >
+            {currentIndex + 1 < total ? (
+              <>
+                Volgende vraag
+                <ArrowRightIcon className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                Bekijk resultaat
+                <TrophyIcon className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

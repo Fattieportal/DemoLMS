@@ -1,116 +1,112 @@
-import Link from "next/link";
-import { modules } from "@/lib/mockData";
+"use client";
+import { useState } from "react";
 import {
-  CogIcon,
+  UserCircleIcon,
   BellIcon,
   ShieldCheckIcon,
-  ArrowRightOnRectangleIcon,
+  QuestionMarkCircleIcon,
+  DocumentTextIcon,
   ChevronRightIcon,
-  StarIcon,
+  ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { TrophyIcon } from "@heroicons/react/24/solid";
-
-const completedLessons = modules.reduce((a, m) => a + m.completedLessons, 0);
+import {
+  CheckBadgeIcon,
+  StarIcon,
+} from "@heroicons/react/24/solid";
 
 const menuItems = [
-  {
-    icon: CogIcon,
-    label: "Account Settings",
-    desc: "Manage your profile & password",
-    href: "#",
-  },
-  {
-    icon: BellIcon,
-    label: "Notifications",
-    desc: "Reminders & learning nudges",
-    href: "#",
-  },
-  {
-    icon: StarIcon,
-    label: "Subscription",
-    desc: "LearnFlow Pro — Active",
-    href: "#",
-    badge: "PRO",
-  },
-  {
-    icon: ShieldCheckIcon,
-    label: "Privacy & Security",
-    desc: "Data, permissions & sessions",
-    href: "#",
-  },
+  { icon: UserCircleIcon, label: "Persoonlijke gegevens", color: "text-blue-500", bg: "bg-blue-50" },
+  { icon: BellIcon, label: "Meldingen", color: "text-indigo-500", bg: "bg-indigo-50" },
+  { icon: ShieldCheckIcon, label: "Privacy & beveiliging", color: "text-emerald-500", bg: "bg-emerald-50" },
+  { icon: StarIcon, label: "Upgrade naar Pro", color: "text-yellow-500", bg: "bg-yellow-50" },
+  { icon: QuestionMarkCircleIcon, label: "Help & ondersteuning", color: "text-sky-500", bg: "bg-sky-50" },
+  { icon: DocumentTextIcon, label: "Voorwaarden & beleid", color: "text-gray-400", bg: "bg-gray-50" },
 ];
 
 export default function ProfilePage() {
+  const [notifications, setNotifications] = useState(true);
+
   return (
-    <div className="page-enter px-4 pt-12">
-      {/* Avatar + name */}
-      <div className="flex flex-col items-center text-center mb-7">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-xl shadow-violet-200 mb-3">
-          A
-        </div>
-        <h1 className="text-xl font-bold text-gray-800">Alex Johnson</h1>
-        <p className="text-gray-400 text-sm mt-0.5">alex@learnflow.io</p>
-        <div className="flex items-center gap-1.5 mt-2 bg-violet-50 px-3 py-1.5 rounded-full">
-          <TrophyIcon className="w-3.5 h-3.5 text-yellow-400" />
-          <span className="text-xs font-bold text-violet-700">Level 4 — Designer</span>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
-          <p className="text-xl font-bold text-gray-800">{completedLessons}</p>
-          <p className="text-[10px] text-gray-400 font-medium">Lessons done</p>
-        </div>
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
-          <p className="text-xl font-bold text-gray-800">1,240</p>
-          <p className="text-[10px] text-gray-400 font-medium">XP earned</p>
-        </div>
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
-          <p className="text-xl font-bold text-gray-800">3</p>
-          <p className="text-[10px] text-gray-400 font-medium">Badges</p>
+    <div className="page-enter pb-8">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-12 pb-8 relative overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+        <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/10 rounded-full" />
+        <div className="relative flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+            T
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <h1 className="text-white text-xl font-bold">Thomas de Vries</h1>
+              <CheckBadgeIcon className="w-5 h-5 text-blue-200" />
+            </div>
+            <p className="text-white/70 text-sm">Niveau 4 — Gevorderd</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                TheorieRijbewijs Pro
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Menu */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 divide-y divide-gray-50">
+      {/* Stats row */}
+      <div className="mx-4 -mt-4 bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-5">
+        <div className="grid grid-cols-3 divide-x divide-gray-100">
+          {[
+            { value: "12", label: "Lessen" },
+            { value: "1.240", label: "Punten" },
+            { value: "4", label: "Dagreeks" },
+          ].map((s, i) => (
+            <div key={i} className="px-4 text-center">
+              <p className="text-lg font-bold text-gray-800">{s.value}</p>
+              <p className="text-xs text-gray-400">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Menu items */}
+      <div className="px-4 space-y-2 mb-5">
         {menuItems.map((item, i) => (
-          <Link
+          <button
             key={i}
-            href={item.href}
-            className="flex items-center gap-3 p-4 hover:bg-gray-50 active:bg-violet-50 transition-colors group cursor-pointer"
+            className="w-full bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-gray-100 active:bg-gray-50 transition-colors cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 transition-colors">
-              <item.icon className="w-5 h-5 text-violet-500" />
+            <div className={`w-9 h-9 ${item.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+              <item.icon className={`w-5 h-5 ${item.color}`} />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-                {item.badge && (
-                  <span className="text-[9px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-400">{item.desc}</p>
-            </div>
-            <ChevronRightIcon className="w-4 h-4 text-gray-300 flex-shrink-0" />
-          </Link>
+            <span className="flex-1 text-sm font-medium text-gray-700 text-left">
+              {item.label}
+            </span>
+            {item.label === "Meldingen" ? (
+              <button
+                onClick={() => setNotifications((v) => !v)}
+                className={`w-11 h-6 rounded-full transition-colors ${
+                  notifications ? "bg-blue-500" : "bg-gray-200"
+                } relative flex-shrink-0`}
+              >
+                <span
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                    notifications ? "left-5" : "left-0.5"
+                  }`}
+                />
+              </button>
+            ) : (
+              <ChevronRightIcon className="w-4 h-4 text-gray-300 flex-shrink-0" />
+            )}
+          </button>
         ))}
       </div>
 
-      {/* Sign out */}
-      <Link
-        href="/"
-        className="flex items-center justify-center gap-2 w-full p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:bg-red-50 hover:border-red-100 text-red-500 font-semibold text-sm transition-all duration-150 active:scale-[0.98] mb-6"
-      >
-        <ArrowRightOnRectangleIcon className="w-5 h-5" />
-        Sign Out
-      </Link>
-
-      <p className="text-center text-[10px] text-gray-300 mb-4">
-        LearnFlow v1.0 — Demo prototype
-      </p>
+      {/* Uitloggen */}
+      <div className="px-4">
+        <button className="w-full bg-red-50 rounded-2xl p-4 flex items-center justify-center gap-2 border border-red-100 active:bg-red-100 transition-colors cursor-pointer">
+          <ArrowRightStartOnRectangleIcon className="w-5 h-5 text-red-400" />
+          <span className="text-sm font-semibold text-red-500">Uitloggen</span>
+        </button>
+      </div>
     </div>
   );
 }

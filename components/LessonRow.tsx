@@ -5,7 +5,6 @@ import {
   LockClosedIcon,
   PlayCircleIcon,
 } from "@heroicons/react/24/solid";
-import { ClockIcon } from "@heroicons/react/24/outline";
 
 interface LessonRowProps {
   lesson: Lesson;
@@ -14,71 +13,61 @@ interface LessonRowProps {
 }
 
 export default function LessonRow({ lesson, moduleId, index }: LessonRowProps) {
+  const href = `/dashboard/modules/${moduleId}/lessons/${lesson.id}`;
+
+  const badge = lesson.completed ? (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+      <CheckCircleIcon className="w-3 h-3" />
+      Afgerond
+    </span>
+  ) : lesson.locked ? (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+      <LockClosedIcon className="w-3 h-3" />
+      Vergrendeld
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+      <PlayCircleIcon className="w-3 h-3" />
+      Begin
+    </span>
+  );
+
   if (lesson.locked) {
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl opacity-50 cursor-not-allowed">
-        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-          <LockClosedIcon className="w-4 h-4 text-gray-400" />
+      <div className="flex items-center gap-3 px-4 py-3.5 opacity-50 cursor-not-allowed">
+        <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-bold text-gray-400">{index + 1}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500 truncate">
-            {lesson.title}
-          </p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <ClockIcon className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-400">{lesson.duration}</span>
-          </div>
+          <p className="text-sm font-semibold text-gray-500 truncate">{lesson.title}</p>
+          <p className="text-xs text-gray-400">{lesson.duration}</p>
         </div>
-        <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-          Locked
-        </span>
+        {badge}
       </div>
     );
   }
 
   return (
-    <Link href={`/dashboard/modules/${moduleId}/lessons/${lesson.id}`}>
-      <div className="flex items-center gap-3 p-3 rounded-xl active:bg-violet-50 transition-colors duration-150 group hover:bg-violet-50/50 cursor-pointer">
-        {/* Step number / icon */}
+    <Link href={href}>
+      <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-blue-50/50 active:bg-blue-50 transition-colors cursor-pointer">
         <div
-          className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+          className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
             lesson.completed
-              ? "bg-emerald-50"
-              : "bg-violet-50 group-hover:bg-violet-100"
+              ? "bg-green-100"
+              : "bg-blue-100"
           }`}
         >
           {lesson.completed ? (
-            <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+            <CheckCircleIcon className="w-4 h-4 text-green-500" />
           ) : (
-            <PlayCircleIcon className="w-5 h-5 text-violet-400" />
+            <span className="text-xs font-bold text-blue-600">{index + 1}</span>
           )}
         </div>
-
-        {/* Text */}
         <div className="flex-1 min-w-0">
-          <p
-            className={`text-sm font-medium truncate ${
-              lesson.completed ? "text-gray-500" : "text-gray-800"
-            }`}
-          >
-            {index + 1}. {lesson.title}
-          </p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <ClockIcon className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-400">{lesson.duration}</span>
-          </div>
+          <p className="text-sm font-semibold text-gray-700 truncate">{lesson.title}</p>
+          <p className="text-xs text-gray-400">{lesson.duration}</p>
         </div>
-
-        {/* Badge */}
-        {lesson.completed ? (
-          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex-shrink-0">
-            Done
-          </span>
-        ) : (
-          <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full flex-shrink-0">
-            Start
-          </span>
-        )}
+        {badge}
       </div>
     </Link>
   );

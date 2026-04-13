@@ -1,34 +1,20 @@
 interface ProgressBarProps {
-  value: number; // 0–100
+  progress: number;
   color?: string;
-  height?: "sm" | "md";
-  showLabel?: boolean;
+  height?: string;
 }
 
 export default function ProgressBar({
-  value,
-  color = "bg-violet-500",
-  height = "sm",
-  showLabel = false,
+  progress,
+  color = "bg-blue-500",
+  height = "h-2",
 }: ProgressBarProps) {
-  const h = height === "sm" ? "h-1.5" : "h-2.5";
-  const clamped = Math.min(100, Math.max(0, value));
-
   return (
-    <div className="flex items-center gap-3">
+    <div className={`w-full bg-gray-100 rounded-full overflow-hidden ${height}`}>
       <div
-        className={`flex-1 ${h} bg-gray-100 rounded-full overflow-hidden`}
-      >
-        <div
-          className={`${h} ${color} rounded-full transition-all duration-500 ease-out`}
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
-      {showLabel && (
-        <span className="text-xs font-semibold text-gray-500 w-8 text-right">
-          {Math.round(clamped)}%
-        </span>
-      )}
+        className={`${color} ${height} rounded-full transition-all duration-500`}
+        style={{ width: `${Math.min(progress, 100)}%` }}
+      />
     </div>
   );
 }

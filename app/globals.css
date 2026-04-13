@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7ff;
-  --foreground: #1a1a2e;
+  --background: #f5f7fa;
+  --foreground: #0f172a;
   --surface: #ffffff;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --accent: #7c3aed;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #1d4ed8;
 }
 
 @theme inline {
@@ -17,7 +17,6 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 * {
@@ -36,28 +35,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 999px;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
 
-/* Page transition animation */
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .page-enter {

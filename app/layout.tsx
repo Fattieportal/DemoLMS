@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "LearnFlow — Premium E-Learning",
-  description: "A modern mobile-first e-learning platform demo",
+  title: "TheorieRijbewijs — Online Autotheorie",
+  description: "Leer autotheorie slim en snel met onze premium leeromgeving.",
 };
 
 export const viewport = {

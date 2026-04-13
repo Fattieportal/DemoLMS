@@ -5,6 +5,8 @@ export interface Lesson {
   completed: boolean;
   locked: boolean;
   description: string;
+  content?: string;
+  keyPoints?: string[];
   videoPlaceholder?: string;
 }
 
