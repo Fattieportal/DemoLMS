@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 import useMainStore from "~/stores/main.store";
 
 const tabs = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Home", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
   { href: "/progress", label: "Progress", icon: BarChart3 },
   { href: "/profile", label: "Profile", icon: User },
@@ -30,7 +30,8 @@ const Tabs = () => {
     visible: false,
   });
 
-  const activeIdx = tabs.findIndex((t) => (t.href === "/" ? path === "/" : path.startsWith(t.href)));
+  // const activeIdx = tabs.findIndex((t) => (t.href === "/" ? path === "/" : path.startsWith(t.href)));
+  const activeIdx = tabs.findIndex((t) => path.startsWith(t.href));
   const targetIdx = hoveredIdx ?? (activeIdx >= 0 ? activeIdx : null);
 
   const hideTabs = useMainStore((x) => x.hideTabs);

@@ -7,9 +7,9 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  
+  index("routes/index.tsx"),
   layout("routes/layout.tsx", [
-    index("routes/dashboard.tsx"),
+    route("dashboard", "routes/dashboard.tsx"),
 
     ...prefix("modules", [
       index("routes/modules/index.tsx"),

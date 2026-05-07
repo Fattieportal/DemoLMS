@@ -25,7 +25,6 @@ export async function clientLoader() {
   }
 
   const userId = Number(authUser.user.ID);
-
   const [wpUser, courses, progress] = await Promise.all([
     userService.getMe(),
     courseService.getCourses({ per_page: 100 }),
