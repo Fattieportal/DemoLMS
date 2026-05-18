@@ -1,116 +1,84 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AuthUser } from "~/models/user.model";
+
+import type { User, AuthResponse } from "~/models/auth.model";
 import { authService } from "~/services/auth.service";
 
 interface AuthState {
-  token: string | null;
-  user: AuthUser | null;
+  user: User | null;
+  access_token: string | null;
+  refresh_token: string | null;
   isLoading: boolean;
   error: string | null;
+    isAuthenticated: boolean;
 
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  validateToken: () => Promise<boolean>;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  setAuth: (data: AuthResponse) => void;
   clearError: () => void;
-
-  register: (
-    email: string,
-    password: string,
-    display_name: string,
-  ) => Promise<boolean>;
+  register: (display_name: string, email: string, password: string) => Promise<void>;
 }
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      token: null,
       user: null,
+      access_token: null,
+      refresh_token: null,
+      isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      login: async (email, password) => {
+      setAuth: (data) =>
+        set({
+          user: data.user,
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          isAuthenticated: true,
+        }),
+
+      login: async (username, password) => {
         set({ isLoading: true, error: null });
         try {
-          const loginRes = await authService.login({ email, password });
-
-          if (!loginRes.success) {
-            set({ error: "Invalid credentials.", isLoading: false });
-            return false;
-          }
-
-          const jwt = loginRes.data.jwt;
-          const validateRes = await authService.validateToken(jwt);
-
-          if (!validateRes.success) {
-            set({ error: "Token validation failed.", isLoading: false });
-            return false;
-          }
-
-          set({ token: jwt, user: validateRes.data, isLoading: false });
-          return true;
+          const data = await authService.login({ username, password });
+          get().setAuth(data);
         } catch (err: any) {
-          const message =
-            err?.response?.data?.data?.message ||
-            err?.response?.data?.message ||
-            "Something went wrong.";
-          set({ error: message, isLoading: false });
-          return false;
-        }
-      },
-
-      validateToken: async () => {
-        const token = get().token;
-        if (!token) return false;
-
-        try {
-          const res = await authService.validateToken(token);
-          if (res.success) {
-            set({ user: res.data });
-            return true;
-          }
-          get().logout();
-          return false;
-        } catch {
-          get().logout();
-          return false;
-        }
-      },
-
-      logout: () => {
-        set({ token: null, user: null, error: null });
-      },
-
-      register: async (email, password, display_name) => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await authService.register(email, password, display_name);
-
-          if (!res.success) {
-            set({
-              error: res.data?.message || "Registration failed.",
-              isLoading: false,
-            });
-            return false;
-          }
-
+          set({ error: err?.message ?? "Login failed." });
+          throw err;
+        } finally {
           set({ isLoading: false });
-          return true;
-        } catch (err: any) {
-          const message =
-            err?.response?.data?.data?.message ||
-            err?.response?.data?.message ||
-            "Something went wrong.";
-          set({ error: message, isLoading: false });
-          return false;
         }
+      },
+
+      register: async (display_name, email, password) => {
+        set({ isLoading: true, error: null });
+        try {
+          const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_");
+          const data = await authService.register({ username, email, password, display_name });
+          get().setAuth(data);
+        } catch (err: any) {
+          set({ error: err?.message ?? "Registration failed." });
+          throw err;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      logout: async () => {
+        const token = get().access_token;
+        if (token) await authService.logout(token).catch(() => {});
+        set({ user: null, access_token: null, refresh_token: null, isAuthenticated: false });
       },
 
       clearError: () => set({ error: null }),
     }),
     {
       name: "auth-storage",
-      partialize: (state) => ({ token: state.token }),
-    },
-  ),
+      partialize: (state) => ({
+        user: state.user,
+        access_token: state.access_token,
+        refresh_token: state.refresh_token,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
 );

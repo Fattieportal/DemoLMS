@@ -1,208 +1,238 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useParams } from "react-router";
 import { ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
-import { Link, useLoaderData, useParams } from "react-router";
-import { ProgressBar } from "~/components/ProgressBar";
 import { useAuthStore } from "~/stores/auth.store";
 import { useCourseStore } from "~/stores/course.store";
-import { courseService } from "~/services/course.service";
-import { getCourseImage } from "~/models/course.model";
+import { useLessonStore } from "~/stores/lesson.store";
 import useMainStore from "~/stores/main.store";
+import { APP_NAME } from "~/constant";
 import type { Route } from "./+types/lesson";
 
-export function meta({}: Route.MetaArgs) {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+  if (!useAuthStore.persist.hasHydrated()) {
+    await new Promise<void>((resolve) => {
+      const unsub = useAuthStore.persist.onFinishHydration(() => {
+        unsub();
+        resolve();
+      });
+    });
+  }
+
+  const { access_token } = useAuthStore.getState();
+  const lessonId = Number(params.lessonId);
+
+  if (access_token) {
+    await useLessonStore.getState().fetchLesson(access_token, lessonId);
+    const lesson = useLessonStore.getState().lesson;
+    const topicStep = lesson?.steps.find((s) => s.type === "topic");
+    if (topicStep) {
+      await useLessonStore.getState().fetchTopic(access_token, topicStep.id);
+    }
+  }
+
+  const lesson = useLessonStore.getState().lesson;
+  return { title: lesson?.title ?? "Lesson" };
+}
+
+export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: "LMS - Lesson" },
+    { title: `${APP_NAME} - ${loaderData?.title ?? "Lesson"}` },
     { name: "description", content: "LMS App." },
   ];
 }
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const authUser = useAuthStore.getState().user;
-
-  if (!authUser?.user?.ID) {
-    throw new Response("Unauthorized", { status: 401 });
+declare global {
+  interface Window {
+    playerjs: any;
   }
+}
 
-  const courseId = Number(params.moduleId);
-  const lessonId = Number(params.lessonId);
-  const userId = Number(authUser.user.ID);
-
-  const storeState = useCourseStore.getState();
-  const hasCourse = storeState.courses.some((c) => c.id === courseId);
-  const hasProgress = storeState.progress.some((p) => p.course === courseId);
-
-  const [lesson, course, courseProgress] = await Promise.all([
-    courseService.getLesson(lessonId),
-    hasCourse
-      ? Promise.resolve(storeState.courses.find((c) => c.id === courseId)!)
-      : courseService.getCourse(courseId),
-    hasProgress
-      ? Promise.resolve(storeState.progress.find((p) => p.course === courseId)!)
-      : courseService.getUserCourseProgressById(userId, courseId),
-  ]);
-
-  if (!hasCourse || !hasProgress) {
-    useCourseStore.setState((state) => ({
-      courses: hasCourse ? state.courses : [...state.courses, course],
-      progress: hasProgress ? state.progress : [...state.progress, courseProgress],
-    }));
-  }
-
-  return { lesson };
+function getIframeSrc(content: string): string | null {
+  const match = content.match(
+    /src=["']([^"']+player\.mediadelivery\.net[^"']+)["']/,
+  );
+  return match ? match[1] : null;
 }
 
 export default function LessonPage() {
-  const { lesson } = useLoaderData<typeof clientLoader>();
   const { moduleId, lessonId } = useParams();
+  const { access_token } = useAuthStore();
+  const { courses } = useCourseStore();
+  const { lesson, topic, topicCompleted, completeTopic } = useLessonStore();
+  const setShowBack = useMainStore((x) => x.setShowBack);
 
-  const courseId = Number(moduleId);
-  const lessonIdNum = Number(lessonId);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const courses = useCourseStore((s) => s.courses);
-  const lessonStatus = useCourseStore((s) => s.lessonStatus);
-  const lessonQuizSteps = useCourseStore((s) => s.lessonQuizSteps);
-  const nextLesson = useCourseStore((s) => s.nextLesson);
-  const courseProgress = useCourseStore((s) => s.courseProgress);
-  const setShowBack = useMainStore((s) => s.setShowBack);
+  const course = courses.find((c) => c.id === Number(moduleId));
+  const topicStep = lesson?.steps.find((s) => s.type === "topic") ?? null;
+  const quizStep = lesson?.steps.find((s) => s.type === "quiz") ?? null;
+  const iframeSrc = topic?.content ? getIframeSrc(topic.content) : null;
 
-  const course = courses.find((c) => c.id === courseId);
-  const status = lessonStatus(courseId, lessonIdNum);
-  const quizzes = lessonQuizSteps(courseId, lessonIdNum);
-  const next = nextLesson(courseId, lessonIdNum);
-
-  const progress = courseProgress(courseId);
-  const steps = progress?._embedded?.steps?.[0] ?? [];
-  const lessonSteps = steps.filter((s) => s.post_type === "sfwd-lessons");
-  const lessonIndex = lessonSteps.findIndex((s) => s.step === lessonIdNum);
-  const lessonNumber = lessonIndex + 1;
-  const totalLessons = lessonSteps.length;
-  const lessonProgress =
-    totalLessons > 0 ? Math.round((lessonNumber / totalLessons) * 100) : 0;
+  const stableSrc = useMemo(
+    () =>
+      iframeSrc
+        ? `${iframeSrc}${iframeSrc.includes("?") ? "&" : "?"}t=${Date.now()}`
+        : null,
+    [iframeSrc],
+  );
 
   useEffect(() => {
     setShowBack(true);
     return () => setShowBack(false);
-  });
+  }, []);
+
+  // Player.js attachment
+  useEffect(() => {
+    if (!stableSrc || topicCompleted) return;
+
+    let player: any = null;
+
+    const init = () => {
+      if (!iframeRef.current) return;
+      player = new window.playerjs.Player(iframeRef.current);
+      player.on("ready", () => {
+        player.on("ended", async () => {
+          if (!access_token || !topicStep) return;
+          await completeTopic(access_token, topicStep.id);
+        });
+      });
+    };
+
+    if (window.playerjs) {
+      init();
+      return () => {
+        if (player) player.off("ended");
+      };
+    }
+
+    const existing = document.querySelector('script[src*="playerjs"]');
+    if (existing) {
+      existing.addEventListener("load", init);
+      return () => existing.removeEventListener("load", init);
+    }
+
+    const script = document.createElement("script");
+    script.src = "//assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
+    script.async = true;
+    script.onload = () => init();
+    document.head.appendChild(script);
+
+    return () => {
+      if (player) player.off("ended");
+    };
+  }, [stableSrc, topicCompleted]);
+
+  if (!lesson) {
+    return (
+      <div className="space-y-5 animate-pulse px-5 pt-4">
+        <div className="aspect-video bg-muted rounded-2xl" />
+        <div className="h-6 w-2/3 bg-muted rounded-xl" />
+        <div className="h-20 bg-muted rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-5">
-      <div className="relative aspect-video bg-primary overflow-hidden">
-        {course && (
-          <img
-            src={getCourseImage(course) ?? "/placeholder.png"}
-            alt={lesson.title.rendered}
-            className="h-full w-full object-cover opacity-90"
+    <div className="space-y-5 pb-8">
+      {/* Video player */}
+      {stableSrc  && (
+        <div
+          style={{ position: "relative", paddingTop: "56.25%" }}
+          className="bg-black"
+        >
+          <iframe
+            ref={iframeRef}
+            src={stableSrc}
+            loading="lazy"
+            style={{
+              border: "none",
+              position: "absolute",
+              top: 0,
+              height: "100%",
+              width: "100%",
+            }}
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowFullScreen
           />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="px-5 space-y-5">
+        {/* Breadcrumb + title */}
         <div>
           {course && (
             <Link
-              to={`/modules/${courseId}`}
+              to={`/modules/${moduleId}`}
               className="text-[10px] uppercase tracking-wider text-secondary font-semibold"
             >
-              {course.title.rendered}
+              {course.title}
             </Link>
           )}
-          <h1
-            className="font-display text-2xl font-bold tracking-tight mt-1.5"
-            dangerouslySetInnerHTML={{ __html: lesson.title.rendered }}
-          />
-          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
-            <span className="inline-flex items-center gap-1">
-              <CheckCircle2
-                className={`h-3.5 w-3.5 ${status.completed ? "text-success" : ""}`}
-              />
-              {status.completed
-                ? "Completed"
-                : status.inProgress
-                  ? "In progress"
-                  : "Not started"}
+          <h1 className="font-display text-2xl font-bold tracking-tight mt-1.5">
+            {lesson.title}
+          </h1>
+          <div className="flex items-center gap-2 mt-2">
+            <CheckCircle2
+              className={`h-4 w-4 ${topicCompleted ? "text-success" : "text-muted-foreground"}`}
+            />
+            <span className="text-xs text-muted-foreground">
+              {topicCompleted
+                ? "Video completed"
+                : "Watch the video to continue"}
             </span>
           </div>
         </div>
 
-        {totalLessons > 0 && (
+        {/* Topic card */}
+        {topicStep && (
           <div className="rounded-2xl p-4 bg-card border border-border/60">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-muted-foreground">
-                Lesson {lessonNumber} of {totalLessons}
-              </p>
-              <p className="text-xs font-semibold text-primary">
-                {lessonProgress}%
-              </p>
-            </div>
-            <ProgressBar value={lessonProgress} />
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+              Topic
+            </p>
+            <p className="font-semibold text-sm">{topicStep.title}</p>
           </div>
         )}
 
-        <article
-          className="prose prose-sm max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-foreground prose-p:text-foreground/85 prose-li:text-foreground/85 prose-iframe:w-full prose-iframe:rounded-2xl"
-          dangerouslySetInnerHTML={{ __html: lesson.content.rendered }}
-        />
-
-        {lesson.materials_enabled && lesson.materials.rendered && (
-          <div className="rounded-2xl p-4 bg-card border border-border/60">
-            <p className="text-sm font-semibold mb-2">Materials</p>
-            <div
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: lesson.materials.rendered }}
-            />
-          </div>
-        )}
-
-        {quizzes.length > 0 && (
-          <div className="flex flex-col space-y-2.5">
-            {quizzes.map((quiz) => (
-              <Link
-                key={quiz.step}
-                to={`/modules/${courseId}/lessons/${lessonIdNum}/quiz/${quiz.step}`}
-                className="block w-full rounded-2xl gradient-cool text-secondary-foreground p-4 shadow-pop"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-secondary-foreground/15 flex items-center justify-center">
-                      <HelpCircle className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-display font-semibold">
-                        {quiz.step_name}
-                      </p>
-                      <p className="text-xs opacity-90">
-                        {quiz.step_status === "completed"
-                          ? "Completed"
-                          : "Take the quiz"}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-5 w-5" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {next && (
+        {/* Quiz — revealed after topic complete */}
+        {quizStep && topicCompleted && (
           <Link
-            to={`/modules/${courseId}/lessons/${next.step}`}
+            to={`/modules/${moduleId}/lessons/${lessonId}/quiz/${quizStep.id}`}
+            className="block w-full rounded-2xl gradient-cool text-secondary-foreground p-4 shadow-pop"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-secondary-foreground/15 flex items-center justify-center">
+                  <HelpCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-display font-semibold">{quizStep.title}</p>
+                  <p className="text-xs opacity-90">
+                    {quizStep.completed ? "Completed" : "Take the quiz"}
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5" />
+            </div>
+          </Link>
+        )}
+
+        {/* No quiz — next lesson after topic complete */}
+        {!quizStep && topicCompleted && lesson.next && (
+          <Link
+            to={`/modules/${moduleId}/lessons/${lesson.next.id}`}
             className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border/60 shadow-soft"
           >
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                 Next lesson
               </p>
-              <p
-                className="font-semibold text-sm mt-0.5"
-                dangerouslySetInnerHTML={{ __html: next.step_name }}
-              />
+              <p className="font-semibold text-sm mt-0.5">
+                {lesson.next.title}
+              </p>
             </div>
             <ArrowRight className="h-5 w-5 text-secondary shrink-0" />
           </Link>
         )}
-
-        <div className="h-4" />
       </div>
     </div>
   );

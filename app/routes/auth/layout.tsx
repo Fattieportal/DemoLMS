@@ -4,16 +4,8 @@ import { APP_NAME } from "~/constant";
 import { useAuthStore } from "~/stores/auth.store";
 
 export async function clientLoader() {
-  const { token, validateToken } = useAuthStore.getState();
-
-  if (token) {
-    const isValid = await validateToken();
-
-    if (isValid) {
-      throw redirect("/");
-    }
-  }
-
+  const { isAuthenticated } = useAuthStore.getState();
+  if (isAuthenticated) throw redirect("/dashboard");
   return null;
 }
 

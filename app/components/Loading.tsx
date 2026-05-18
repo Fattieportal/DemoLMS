@@ -7,7 +7,7 @@ const Loading = () => {
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6"
+      className="flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 absolute inset-0 z-50"
     >
       {/* Ambient gradient orbs */}
       <div

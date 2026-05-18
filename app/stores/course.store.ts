@@ -1,183 +1,87 @@
 import { create } from "zustand";
-import type { Course, Lesson } from "~/models/course.model";
-import type { CourseProgress, StepProgress } from "~/models/progress.model";
-
-interface DerivedOverallProgress {
-  percent: number;
-  done: number;
-  total: number;
-}
-
-type DerivedContinueLearning = {
-  course: Course;
-  lesson: Lesson | null;
-  progress: CourseProgress;
-} | null;
-
-export interface LessonStatus {
-  completed: boolean;
-  inProgress: boolean;
-  locked: boolean;
-}
+import { decodeHTML } from "~/lib/helpers";
+import type { Course, CourseDetail } from "~/models/course.model";
+import { courseService } from "~/services/course.service";
 
 interface CourseState {
   courses: Course[];
-  progress: CourseProgress[];
+  total: number;
   isLoading: boolean;
   error: string | null;
-
-  // Derived selectors
-  overallProgress: () => DerivedOverallProgress;
-  continueLearning: () => DerivedContinueLearning;
-  featuredCourses: (count?: number) => Course[];
-  courseProgress: (courseId: number) => CourseProgress | undefined;
-  lessonStatus: (courseId: number, lessonId: number) => LessonStatus;
-  lessonStatuses: (courseId: number, lessons: Lesson[]) => LessonStatus[];
-  lessonQuizSteps: (courseId: number, lessonId: number) => StepProgress[];
-  nextLesson: (courseId: number, lessonId: number) => StepProgress | null;
+  fetchCourses: (
+    token: string,
+    page?: number,
+    per_page?: number,
+  ) => Promise<void>;
+  courseDetails: Record<number, CourseDetail>;
+  fetchCourseDetail: (token: string, id: number) => Promise<void>;
+  lastFetched: number | null;
 }
 
-// Helper to get flat steps array from embedded response
-function getSteps(p: CourseProgress): StepProgress[] {
-  return p._embedded?.steps?.[0] ?? [];
+function parseCourseDetail(data: CourseDetail): CourseDetail {
+  return {
+    ...data,
+    title: decodeHTML(data.title),
+    excerpt: decodeHTML(data.excerpt),
+    lessons: data.lessons.map((l) => ({
+      ...l,
+      title: decodeHTML(l.title),
+      excerpt: decodeHTML(l.excerpt),
+      steps: l.steps.map((t) => ({
+        ...t,
+        title: decodeHTML(t.title),
+        excerpt: decodeHTML(t.excerpt),
+      })),
+    })),
+  };
 }
 
-export const useCourseStore = create<CourseState>((set, get) => ({
+function parseCourse(data: Course): Course {
+  return {
+    ...data,
+    title: decodeHTML(data.title),
+    excerpt: decodeHTML(data.excerpt),
+  };
+}
+
+export const useCourseStore = create<CourseState>((set) => ({
   courses: [],
-  progress: [],
+  total: 0,
   isLoading: false,
   error: null,
+  courseDetails: {},
+  lastFetched: null,
 
-  overallProgress: () => {
-    const { progress } = get();
-    if (!progress.length) return { percent: 0, done: 0, total: 0 };
-
-    const total = progress.reduce((sum, p) => sum + p.steps_total, 0);
-    const done = progress.reduce((sum, p) => sum + p.steps_completed, 0);
-    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-    return { percent, done, total };
-  },
-
-  continueLearning: () => {
-    const { courses, progress } = get();
-    if (!progress.length || !courses.length) return null;
-
-    const inProgress = progress
-      .filter((p) => p.progress_status === "in_progress" && p.date_started_gmt)
-      .sort(
-        (a, b) =>
-          new Date(b.date_started_gmt).getTime() -
-          new Date(a.date_started_gmt).getTime()
-      );
-
-    if (!inProgress.length) return null;
-
-    const latestProgress = inProgress[0];
-    const course = courses.find((c) => c.id === latestProgress.course);
-    if (!course) return null;
-
-    const steps = getSteps(latestProgress);
-    const lastLesson = steps.find(
-      (s) => s.post_type === "sfwd-lessons" && s.step_status !== "completed"
-    );
-
-    const lesson: Lesson | null = lastLesson
-      ? {
-          id: lastLesson.step,
-          title: { rendered: lastLesson.step_name },
-          content: { rendered: "" },
-          slug: "",
-          status: "publish",
-          course: course.id,
-          menu_order: 0,
-          video_enabled: false,
-          video_url: "",
-          materials_enabled: false,
-          materials: { rendered: "" },
-          forced_timer_enabled: false,
-          forced_timer_amount: 0,
-          assignment_upload_enabled: false,
-          is_sample: false,
-        }
-      : null;
-
-    return { course, lesson, progress: latestProgress };
-  },
-
-  featuredCourses: (count = 3) => {
-    return get().courses.slice(0, count);
-  },
-
-  courseProgress: (courseId: number) => {
-    return get().progress.find((p) => p.course === courseId);
-  },
-
-  lessonStatus: (courseId: number, lessonId: number): LessonStatus => {
-    const p = get().progress.find((p) => p.course === courseId);
-    const steps = getSteps(p!);
-    const step = steps.find(
-      (s) => s.step === lessonId && s.post_type === "sfwd-lessons"
-    );
-    return {
-      completed: step?.step_status === "completed",
-      inProgress: step?.step_status === "in_progress",
-      locked: !step || step.step_status === "not_started",
-    };
-  },
-
-  lessonStatuses: (courseId: number, lessons: Lesson[]): LessonStatus[] => {
-    const p = get().progress.find((cp) => cp.course === courseId);
-    const steps = getSteps(p!);
-
-    return lessons.map((lesson, i) => {
-      const step = steps.find(
-        (s) => s.step === lesson.id && s.post_type === "sfwd-lessons"
-      );
-      const completed = step?.step_status === "completed";
-      const inProgress = step?.step_status === "in_progress";
-
-      const previousCompleted =
-        i === 0 ||
-        steps.find(
-          (s) =>
-            s.step === lessons[i - 1].id && s.post_type === "sfwd-lessons"
-        )?.step_status === "completed";
-
-      const locked = !completed && !inProgress && !previousCompleted;
-
-      return { completed, inProgress, locked };
-    });
-  },
-
-  // Returns quiz steps that belong to a specific lesson
-  // In LearnDash steps array, quizzes appear immediately after their parent lesson
-  lessonQuizSteps: (courseId: number, lessonId: number): StepProgress[] => {
-    const p = get().progress.find((cp) => cp.course === courseId);
-    const steps = getSteps(p!);
-
-    const lessonIndex = steps.findIndex(
-      (s) => s.step === lessonId && s.post_type === "sfwd-lessons"
-    );
-    if (lessonIndex === -1) return [];
-
-    // Collect quiz/topic steps until next lesson
-    const quizzes: StepProgress[] = [];
-    for (let i = lessonIndex + 1; i < steps.length; i++) {
-      if (steps[i].post_type === "sfwd-lessons") break;
-      if (steps[i].post_type === "sfwd-quiz") quizzes.push(steps[i]);
+  fetchCourses: async (token, page = 1, per_page = 10) => {
+    const { lastFetched } = useCourseStore.getState();
+    const STALE_MS = 60_000; // 1 minute
+    if (lastFetched && Date.now() - lastFetched < STALE_MS) return;
+    set({ isLoading: true, error: null });
+    try {
+      const data = await courseService.list(token, page, per_page);
+      set({
+        courses: data.items.map(parseCourse),
+        total: data.total,
+        lastFetched: Date.now(),
+      });
+    } catch (err: any) {
+      set({ error: err?.message ?? "Failed to load courses." });
+    } finally {
+      set({ isLoading: false });
     }
-    return quizzes;
   },
 
-  // Returns next lesson step after the given lesson
-  nextLesson: (courseId: number, lessonId: number): StepProgress | null => {
-    const p = get().progress.find((cp) => cp.course === courseId);
-    const steps = getSteps(p!);
-
-    const lessonSteps = steps.filter((s) => s.post_type === "sfwd-lessons");
-    const currentIndex = lessonSteps.findIndex((s) => s.step === lessonId);
-    if (currentIndex === -1 || currentIndex === lessonSteps.length - 1) return null;
-
-    return lessonSteps[currentIndex + 1];
+  fetchCourseDetail: async (token, id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await courseService.get(token, id);
+      set((s) => ({
+        courseDetails: { ...s.courseDetails, [id]: parseCourseDetail(data) },
+      }));
+    } catch (err: any) {
+      set({ error: err?.message ?? "Failed to load module." });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 }));

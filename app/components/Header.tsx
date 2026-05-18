@@ -1,11 +1,20 @@
 import { ArrowLeft, GraduationCap } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { APP_NAME } from "~/constant";
+import { useAuthStore } from "~/stores/auth.store";
 import useMainStore from "~/stores/main.store";
 
 const Header = () => {
   const showBack = useMainStore((x) => x.showBack);
   const navigate = useNavigate();
+  const user = useAuthStore((x) => x.user);
+  const initials = user
+    ? user.display_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+    : "XX";
 
   return (
     <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
@@ -31,9 +40,17 @@ const Header = () => {
         </Link>
         <Link
           to="/profile"
-          className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-semibold text-sm shadow-soft"
+          className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-semibold text-sm shadow-soft overflow-hidden"
         >
-          AM
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.display_name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </Link>
       </div>
     </header>

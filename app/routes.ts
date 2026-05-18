@@ -8,6 +8,7 @@ import {
 
 export default [
   index("routes/index.tsx"),
+  route("paywall", "routes/paywall.tsx"),
   layout("routes/layout.tsx", [
     route("dashboard", "routes/dashboard.tsx"),
 

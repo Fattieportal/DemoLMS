@@ -1,28 +1,47 @@
 import { BookOpen, Flame, GraduationCap, Sparkles } from "lucide-react";
-import React from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { ProgressBar } from "~/components/ProgressBar";
-import { badges, moduleProgress, modules, overallProgress, user } from "~/data/data";
-import type { Route } from "../+types/root";
+import { APP_NAME } from "~/constant";
+import { getCourseImage } from "~/models/course.model";
+import { useAuthStore } from "~/stores/auth.store";
+import { useCourseStore } from "~/stores/course.store";
+import { useGamificationStore } from "~/stores/gamification.store";
+import type { Route } from "./+types/progress";
 
-
-export function meta({  }: Route.MetaArgs) {
+export function meta({}: Route.MetaArgs) {
   return [
-    { title: `LMS - Progress` },
+    { title: `${APP_NAME} - Progress` },
     { name: "description", content: "LMS App." },
   ];
 }
 
-
 const ProgressPage = () => {
-  const p = overallProgress();
-  const completedModules = modules.filter((m) =>
-    m.lessons.every((l) => l.completed),
+  const { access_token } = useAuthStore();
+  const { courses, fetchCourses } = useCourseStore();
+  const { streak, points, fetchAll } = useGamificationStore();
+
+  useEffect(() => {
+    if (!access_token) return;
+    fetchCourses(access_token, 1, 100);
+    fetchAll(access_token);
+  }, [access_token]);
+
+  const overall = useMemo(() => {
+    const done = courses.reduce((a, c) => a + c.completed_steps, 0);
+    const total = courses.reduce((a, c) => a + c.total_steps, 0);
+    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { done, total, percent };
+  }, [courses]);
+
+  const completedModules = courses.filter(
+    (c) => c.progress_percent === 100,
   ).length;
+
   const stats = [
     {
       label: "Lessons",
-      value: p.done,
+      value: overall.done,
       icon: BookOpen,
       tone: "bg-secondary-soft text-secondary",
     },
@@ -34,17 +53,21 @@ const ProgressPage = () => {
     },
     {
       label: "Streak",
-      value: `${user.streak}d`,
+      value: `${streak?.current_streak ?? 0}d`,
       icon: Flame,
       tone: "bg-accent-soft text-accent-foreground",
     },
     {
       label: "Points",
-      value: user.points,
+      value: (points?.total ?? 0).toLocaleString(),
       icon: Sparkles,
       tone: "bg-warning/20 text-warning-foreground",
     },
   ];
+
+  // Achievements from gamification store — map to badge shape
+  const { achievements } = useGamificationStore();
+
 
   return (
     <div className="px-5 pt-4 space-y-6">
@@ -62,10 +85,12 @@ const ProgressPage = () => {
         <p className="text-xs uppercase tracking-wider opacity-80">
           Overall completion
         </p>
-        <p className="font-display text-5xl font-bold mt-1">{p.percent}%</p>
-        <ProgressBar value={p.percent} tone="light" className="mt-4" />
+        <p className="font-display text-5xl font-bold mt-1">
+          {overall.percent}%
+        </p>
+        <ProgressBar value={overall.percent} tone="light" className="mt-4" />
         <p className="text-xs mt-2 opacity-90">
-          {p.done} of {p.total} lessons across all modules
+          {overall.done} of {overall.total} lessons across all modules
         </p>
       </section>
 
@@ -89,61 +114,68 @@ const ProgressPage = () => {
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Modules</h2>
         <div className="flex flex-col space-y-2.5">
-          {modules.map((m) => {
-            const mp = moduleProgress(m);
-            const inner = (
+          {courses.map((course) => (
+            <Link key={course.id} to={`/modules/${course.id}`}>
               <div className="rounded-2xl p-4 bg-card border border-border/60 flex items-center gap-3">
                 <img
-                  src={m.image}
-                  alt={m.title}
+                  src={getCourseImage(course) ?? "/placeholder.png"}
+                  alt={course.title}
                   className="h-12 w-12 rounded-xl object-cover shrink-0"
                   loading="lazy"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-sm truncate">{m.title}</p>
+                    <p className="font-semibold text-sm truncate">
+                      {course.title}
+                    </p>
                     <p className="text-xs font-bold text-primary">
-                      {mp.percent}%
+                      {Math.round(course.progress_percent)}%
                     </p>
                   </div>
-                  <ProgressBar value={mp.percent} className="mt-2" />
+                  <ProgressBar
+                    value={Math.round(course.progress_percent)}
+                    className="mt-2"
+                  />
                 </div>
               </div>
-            );
-            return m.locked ? (
-              <Link key={m.id} to="/paywall">
-                {inner}
-              </Link>
-            ) : (
-              <Link key={m.id} to={`/modules/${m.id}`}>
-                {inner}
-              </Link>
-            );
-          })}
+            </Link>
+          ))}
         </div>
       </section>
 
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Badges</h2>
         <div className="grid grid-cols-3 gap-3">
-          {badges.map((b) => (
-            <div
-              key={b.id}
-              className={`rounded-2xl p-3 text-center border ${
-                b.earned
-                  ? "bg-card border-accent/40 shadow-soft"
-                  : "bg-muted/40 border-border opacity-60"
-              }`}
-            >
-              <div className="text-3xl">{b.icon}</div>
-              <p className="text-xs font-semibold mt-2 leading-tight">
-                {b.name}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                {b.desc}
-              </p>
-            </div>
-          ))}
+          {achievements.map((achievement) =>
+            Object.entries(achievement.levels).map(([level, data]) => (
+              <div
+                key={`${achievement.id}-${level}`}
+                className={`rounded-2xl p-3 text-center border ${
+                  data.unlocked
+                    ? "bg-card border-accent/40 shadow-soft"
+                    : "bg-muted/40 border-border opacity-60"
+                }`}
+              >
+                {data.image_url ? (
+                  <img
+                    src={data.image_url}
+                    alt={data.label}
+                    className="h-10 w-10 mx-auto object-contain"
+                  />
+                ) : (
+                  <div className="h-10 w-10 mx-auto rounded-full bg-muted flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <p className="text-xs font-semibold mt-2 leading-tight">
+                  {achievement.name}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                  {data.label}
+                </p>
+              </div>
+            )),
+          )}
         </div>
       </section>
     </div>

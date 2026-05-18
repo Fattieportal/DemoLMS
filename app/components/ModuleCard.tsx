@@ -1,9 +1,7 @@
 import { Lock } from "lucide-react";
 import { ProgressBar } from "./ProgressBar";
 import { Link } from "react-router";
-import { useCourseStore } from "~/stores/course.store";
 import type { Course } from "~/models/course.model";
-import { getCourseImage } from "~/models/course.model";
 
 export function ModuleCard({
   module,
@@ -12,14 +10,11 @@ export function ModuleCard({
   module: Course;
   compact?: boolean;
 }) {
-  const courseProgress = useCourseStore((s) => s.courseProgress);
-  const p = courseProgress(module.id);
-
-  const done = p?.steps_completed ?? 0;
-  const total = p?.steps_total ?? 0;
-  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-  const locked = module.price_type === "closed" || module.price_type === "paynow";
-  const image = getCourseImage(module);
+  const image = module.thumbnail;
+  const locked = false; // All modules are accessible
+  const total = module.total_steps;
+  const percent = module.progress_percent;
+  const done = total > 0 ? Math.round((percent / 100) * total) : 0;
 
   const content = (
     <div
@@ -28,7 +23,7 @@ export function ModuleCard({
       <div className="relative aspect-16/10 bg-surface overflow-hidden">
         <img
           src={image ?? "/placeholder.png"}
-          alt={module.title.rendered}
+          alt={module.title}
           loading="lazy"
           className="h-full w-full object-cover"
         />
@@ -41,8 +36,7 @@ export function ModuleCard({
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-display text-lg font-semibold leading-tight">
-          {module.title.rendered}
+        <h3 className="font-display text-lg font-semibold leading-tight" dangerouslySetInnerHTML={{ __html: module.title }} >
         </h3>
         {done > 0 && !locked && (
           <div className="mt-3">

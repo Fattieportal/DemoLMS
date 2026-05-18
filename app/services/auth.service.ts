@@ -1,65 +1,54 @@
-import axios from "axios";
-import { AUTH_KEY, BASE_URL } from "~/constant";
-import type {
-  RegisterPayload,
-  RegisterResponse,
-} from "~/models/register.model";
-import type { AuthUser } from "~/models/user.model";
+import { API_URL } from "~/constant";
+import type { AuthResponse, LoginPayload } from "~/models/auth.model";
 
-export interface LoginPayload {
-  email: string;
-  password: string;
+interface ApiSuccess<T> {
+  success: true;
+  message: string;
+  data: T;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  data: {
-    jwt: string;
-  };
+interface ApiError {
+  code: string;
+  message: string;
+  data: { status: number };
 }
 
-export interface ValidateTokenResponse {
-  success: boolean;
-  data: AuthUser;
+async function handleResponse<T>(res: Response): Promise<T> {
+  const json = await res.json();
+  if (!res.ok) throw json as ApiError;
+  return (json as ApiSuccess<T>).data;
 }
 
 export const authService = {
-  login: async (payload: LoginPayload): Promise<LoginResponse> => {
-    const response = await axios.post<LoginResponse>(
-      `${BASE_URL}/jwt/v1/auth`,
-      payload,
-    );
-    return response.data;
-  },
+  login: (payload: LoginPayload) =>
+    fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then((r) => handleResponse<AuthResponse>(r)),
 
-  validateToken: async (token: string): Promise<ValidateTokenResponse> => {
-    const response = await axios.get<ValidateTokenResponse>(
-      `${BASE_URL}/jwt/v1/auth/validate`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-    return response.data;
-  },
+  refresh: (refresh_token: string) =>
+    fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token }),
+    }).then((r) => handleResponse<AuthResponse>(r)),
 
-  register: async (
-    email: string,
-    password: string,
-    display_name: string,
-  ): Promise<RegisterResponse> => {
-    const payload: RegisterPayload = {
-      email,
-      password,
-      display_name,
-      AUTH_KEY,
-    };
+  logout: (access_token: string) =>
+    fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${access_token}` },
+    }).then((r) => handleResponse<{}>(r)),
 
-    const response = await axios.post<RegisterResponse>(
-      `${BASE_URL}/jwt/v1/users`,
-      payload,
-    );
-    return response.data;
-  },
+  register: (payload: {
+    username: string;
+    email: string;
+    password: string;
+    display_name: string;
+  }) =>
+    fetch(`${API_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then((r) => handleResponse<AuthResponse>(r)),
 };

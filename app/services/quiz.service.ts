@@ -1,5 +1,5 @@
 import { API_URL } from "~/constant";
-import type { CoursesPage, CourseDetail } from "~/models/course.model";
+import type { QuizDetail, QuizResult } from "~/models/quiz.model";
 
 interface ApiSuccess<T> { success: true; message: string; data: T; }
 interface ApiError { code: string; message: string; data: { status: number }; }
@@ -14,14 +14,15 @@ function authHeader(token: string) {
   return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 }
 
-export const courseService = {
-  list: (token: string, page = 1, per_page = 10) =>
-    fetch(`${API_URL}/courses?page=${page}&per_page=${per_page}`, {
-      headers: authHeader(token),
-    }).then((r) => handleResponse<CoursesPage>(r)),
-
+export const quizService = {
   get: (token: string, id: number) =>
-    fetch(`${API_URL}/courses/${id}`, {
+    fetch(`${API_URL}/quizzes/${id}`, { headers: authHeader(token) })
+      .then((r) => handleResponse<QuizDetail>(r)),
+
+  submit: (token: string, id: number, answers: Record<string, number>) =>
+    fetch(`${API_URL}/quizzes/${id}/submit`, {
+      method: "POST",
       headers: authHeader(token),
-    }).then((r) => handleResponse<CourseDetail>(r)),
+      body: JSON.stringify({ answers }),
+    }).then((r) => handleResponse<QuizResult>(r)),
 };
