@@ -37,7 +37,7 @@ const ProfilePage = () => {
 
   async function doLogout() {
     await logout();
-    navigate("/auth/login");
+    navigate("/login");
   }
 
   return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { APP_NAME } from "~/constant";
+import { APP_NAME, APP_NAME_SHORT } from "~/constant";
 
 const Loading = () => {
   return (
@@ -45,7 +45,7 @@ const Loading = () => {
             className="absolute inset-0 flex items-center justify-center font-display text-3xl font-bold text-foreground"
             aria-hidden
           >
-            {APP_NAME}
+            {APP_NAME_SHORT}
           </div>
           <span
             aria-hidden
