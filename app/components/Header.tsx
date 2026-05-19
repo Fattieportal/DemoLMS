@@ -20,7 +20,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
       <div className="flex items-center justify-between px-5 h-14">
-        <div className="w-10">
+        <div className="w-24 flex space-x-1">
           {showBack && (
             <button
               onClick={() => navigate(-1)}
