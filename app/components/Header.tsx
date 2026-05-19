@@ -1,4 +1,4 @@
-import { ArrowLeft, GraduationCap } from "lucide-react";
+import { ArrowLeft, GraduationCap, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { APP_NAME } from "~/constant";
 import { useAuthStore } from "~/stores/auth.store";
@@ -8,6 +8,7 @@ const Header = () => {
   const showBack = useMainStore((x) => x.showBack);
   const navigate = useNavigate();
   const user = useAuthStore((x) => x.user);
+  const {mode, toggleMode} = useMainStore();
   const initials = user
     ? user.display_name
         .split(" ")
@@ -29,6 +30,19 @@ const Header = () => {
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
+
+          <button
+              onClick={() => toggleMode()}
+              className="h-10 w-10 rounded-full bg-surface flex items-center justify-center hover:bg-muted transition"
+              aria-label="Back"
+            >
+              {mode === "light" ? (
+              <Moon className="h-4 w-4" />  
+              ) : (
+                <Sun className="h-4 w-4" />  
+              )}
+              
+            </button>
         </div>
         <Link to="/" className="flex items-center gap-1.5">
           <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">

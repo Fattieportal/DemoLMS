@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import Loading from "./components/Loading";
+import useMainStore from "./stores/main.store";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -26,6 +27,7 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const mode = useMainStore((x) => x.mode);
   return (
     <html lang="en">
       <head>
@@ -34,7 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-background grain">
+      <body className={`min-h-screen bg-background grain ${mode === "dark" ? "dark" : ""}`}>
         <div className="mx-auto max-w-md min-h-screen flex flex-col relative">
           {children}
         </div>

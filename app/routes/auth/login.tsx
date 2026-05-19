@@ -70,7 +70,7 @@ const LoginPage = () => {
       <form className="space-y-3" onSubmit={handleSubmit}>
         <div>
           <label className="text-xs font-semibold text-muted-foreground">
-            Email or Username
+            Email
           </label>
           <input
             type="text"

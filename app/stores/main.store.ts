@@ -7,6 +7,9 @@ interface MainStore {
   hideTabs: boolean;
   toggleHideTabs: () => void;
   setHideTabs: (value: boolean) => void;
+  mode: "light" | "dark";
+  toggleMode: () => void;
+  setMode: (mode: "light" | "dark") => void;
 }
 
 const useMainStore = create<MainStore>((set) => ({
@@ -16,6 +19,9 @@ const useMainStore = create<MainStore>((set) => ({
   hideTabs: false,
   toggleHideTabs: () => set((state) => ({ hideTabs: !state.hideTabs })),
   setHideTabs: (value: boolean) => set({ hideTabs: value }),
+  mode: "light",
+  toggleMode: () => set((state) => ({ mode: state.mode === "light" ? "dark" : "light" })),
+  setMode: (mode: "light" | "dark") => set({ mode }),
 }));
 
 export default useMainStore;
