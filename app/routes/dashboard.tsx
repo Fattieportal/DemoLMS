@@ -1,6 +1,6 @@
 import type { Route } from "./+types/dashboard";
-import { ArrowRight, Flame, Play, Sparkles } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { ArrowRight, Flame, GraduationCap, Play, Sparkles } from "lucide-react";
+import { Link } from "react-router";
 import { useEffect, useMemo } from "react";
 import { ModuleCard } from "~/components/ModuleCard";
 import { ProgressBar } from "~/components/ProgressBar";
@@ -58,6 +58,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="relative rounded-3xl p-5 gradient-warm text-primary-foreground shadow-pop overflow-hidden">
+        <Link to="/progress">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/30 blur-2xl" />
         <div className="relative">
           <div className="flex items-center justify-between">
@@ -73,6 +74,7 @@ export default function DashboardPage() {
             <span>Keep going!</span>
           </div>
         </div>
+        </Link>
       </section>
 
       <section className="grid grid-cols-2 gap-3">
@@ -88,7 +90,7 @@ export default function DashboardPage() {
             <span className="text-sm font-medium text-muted-foreground ml-1">days</span>
           </p>
         </div>
-        <div className="rounded-3xl p-4 bg-secondary text-secondary-foreground">
+        <div className="rounded-3xl p-4 bg-[#3A7BB8] text-secondary-foreground">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-full bg-secondary-foreground/15 flex items-center justify-center">
               <Sparkles className="h-4 w-4" />
@@ -139,6 +141,13 @@ export default function DashboardPage() {
       )}
 
       <section>
+        <Link
+          className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-success/10 text-success font-semibold" to="/modules">
+        <GraduationCap className="h-4 w-4" /> Practice Your Mistakes
+      </Link>
+        </section>
+
+      {/* <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-semibold">Modules</h2>
           <Link to="/modules" className="text-xs font-semibold text-secondary inline-flex items-center gap-1">
@@ -150,7 +159,7 @@ export default function DashboardPage() {
             <ModuleCard key={course.id} module={course} compact />
           ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

@@ -58,7 +58,7 @@ export default function ModulesPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col space-y-3">
+          <div className="grid grid-cols-2 gap-4">
             {courses.map((course) => (
               <ModuleCard key={course.id} module={course} />
             ))}
