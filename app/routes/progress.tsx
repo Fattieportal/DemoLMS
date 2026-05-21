@@ -19,7 +19,7 @@ export function meta({}: Route.MetaArgs) {
 const ProgressPage = () => {
   const { access_token } = useAuthStore();
   const { courses, fetchCourses } = useCourseStore();
-  const { streak, points, fetchAll } = useGamificationStore();
+  const { streak, points, achievements, fetchAll } = useGamificationStore();
 
   useEffect(() => {
     if (!access_token) return;
@@ -65,9 +65,19 @@ const ProgressPage = () => {
     },
   ];
 
-  // Achievements from gamification store — map to badge shape
-  const { achievements } = useGamificationStore();
-
+  const topBadges = useMemo(() => {
+    return achievements.map((achievement) => {
+      const levelOrder = ["gold", "silver", "bronze"];
+      const highestUnlocked = levelOrder.find(
+        (l) =>
+          achievement.levels[l as keyof typeof achievement.levels]?.unlocked,
+      );
+      const displayLevel = highestUnlocked ?? "bronze";
+      const data =
+        achievement.levels[displayLevel as keyof typeof achievement.levels];
+      return { achievement, level: displayLevel, data };
+    });
+  }, [achievements]);
 
   return (
     <div className="px-5 pt-4 space-y-6">
@@ -146,36 +156,47 @@ const ProgressPage = () => {
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Badges</h2>
         <div className="grid grid-cols-3 gap-3">
-          {achievements.map((achievement) =>
-            Object.entries(achievement.levels).map(([level, data]) => (
-              <div
-                key={`${achievement.id}-${level}`}
-                className={`rounded-2xl p-3 text-center border ${
-                  data.unlocked
-                    ? "bg-card border-accent/40 shadow-soft"
-                    : "bg-muted/40 border-border opacity-60"
-                }`}
-              >
-                {data.image_url ? (
-                  <img
-                    src={data.image_url}
-                    alt={data.label}
-                    className="h-10 w-10 mx-auto object-contain"
-                  />
-                ) : (
-                  <div className="h-10 w-10 mx-auto rounded-full bg-muted flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-                <p className="text-xs font-semibold mt-2 leading-tight">
-                  {achievement.name}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                  {data.label}
-                </p>
-              </div>
-            )),
-          )}
+          {topBadges.map(({ achievement, level, data }) => (
+            <div
+              key={achievement.id}
+              className={`rounded-2xl p-3 text-center border ${
+                data.unlocked
+                  ? "bg-card border-accent/40 shadow-soft"
+                  : "bg-muted/40 border-border opacity-60"
+              }`}
+            >
+              {data.image_url ? (
+                <img
+                  src={data.image_url}
+                  alt={data.label}
+                  className="h-10 w-10 mx-auto object-contain"
+                />
+              ) : (
+                <div className="h-10 w-10 mx-auto rounded-full bg-muted flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <p className="text-xs font-semibold mt-2 leading-tight">
+                {achievement.name}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                {data.label}
+              </p>
+              {data.unlocked && (
+                <span
+                  className={`inline-block mt-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                    level === "gold"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : level === "silver"
+                        ? "bg-gray-100 text-gray-600"
+                        : "bg-orange-100 text-orange-700"
+                  }`}
+                >
+                  {level}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       </section>
     </div>
