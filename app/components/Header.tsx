@@ -44,7 +44,7 @@ const Header = () => {
           </button>
         </div>
         <Link to="/" className="flex items-center gap-1.5">
-          <div className="p-1 bg-none dark:bg-accent shadow rounded shadow-black dark:shadow-muted">
+          <div className="p-1 bg-none dark:bg-accent rounded dark:shadow shadow-white">
             <img src="/images/logo-full.svg" alt={APP_NAME} className="h-7" />
           </div>
           {/* <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">
@@ -62,7 +62,7 @@ const Header = () => {
             <img
               src={user.avatar}
               alt={user.display_name}
-              className="h-full w-full object-cover border border-secondary/10 rounded-full"
+              className="h-full w-full object-cover rounded-full"
             />
           ) : (
             initials
