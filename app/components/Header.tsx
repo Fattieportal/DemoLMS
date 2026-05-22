@@ -8,7 +8,7 @@ const Header = () => {
   const showBack = useMainStore((x) => x.showBack);
   const navigate = useNavigate();
   const user = useAuthStore((x) => x.user);
-  const {mode, toggleMode} = useMainStore();
+  const { mode, toggleMode } = useMainStore();
   const initials = user
     ? user.display_name
         .split(" ")
@@ -20,7 +20,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
       <div className="flex items-center justify-between px-5 h-14">
-        <div className="w-24 flex space-x-1">
+        <div className={`flex space-x-1`}>
           {showBack && (
             <button
               onClick={() => navigate(-1)}
@@ -32,20 +32,21 @@ const Header = () => {
           )}
 
           <button
-              onClick={() => toggleMode()}
-              className="h-10 w-10 rounded-full bg-surface flex items-center justify-center hover:bg-muted transition"
-              aria-label="Back"
-            >
-              {mode === "light" ? (
-              <Moon className="h-4 w-4" />  
-              ) : (
-                <Sun className="h-4 w-4" />  
-              )}
-              
-            </button>
+            onClick={() => toggleMode()}
+            className="h-10 w-10 rounded-full bg-surface flex items-center justify-center hover:bg-muted transition"
+            aria-label="Back"
+          >
+            {mode === "light" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
         </div>
         <Link to="/" className="flex items-center gap-1.5">
-          <img src="./images/logo-full.svg" alt={APP_NAME} className="h-7" />
+          <div className="p-1 bg-none dark:bg-accent shadow rounded shadow-black dark:shadow-muted">
+            <img src="/images/logo-full.svg" alt={APP_NAME} className="h-7" />
+          </div>
           {/* <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </span>
@@ -61,7 +62,7 @@ const Header = () => {
             <img
               src={user.avatar}
               alt={user.display_name}
-              className="h-full w-full object-cover border border-secondary/60 rounded-full"
+              className="h-full w-full object-cover border border-secondary/10 rounded-full"
             />
           ) : (
             initials
