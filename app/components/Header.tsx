@@ -45,7 +45,7 @@ const Header = () => {
         </div>
         <Link to="/" className="flex items-center gap-1.5">
           <div className="p-1 bg-none dark:bg-accent rounded dark:shadow shadow-white">
-            <img src="/images/logo-full.svg" alt={APP_NAME} className="h-7" />
+            <img src="/images/logo-full.svg" alt={APP_NAME} className="h-10" />
           </div>
           {/* <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
