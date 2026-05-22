@@ -11,7 +11,7 @@ export function ModuleCard({
   compact?: boolean;
 }) {
   const image = module.thumbnail;
-  const locked = false; // All modules are accessible
+  const locked = false;
   const total = module.total_steps;
   const percent = module.progress_percent;
   const done = total > 0 ? Math.round((percent / 100) * total) : 0;
@@ -20,7 +20,8 @@ export function ModuleCard({
     <div
       className={`relative bg-card rounded-3xl overflow-hidden shadow-soft border border-border/60 ${compact ? "" : "h-full"}`}
     >
-      <div className="relative aspect-16/10 bg-surface overflow-hidden">
+      {/* Image — more square */}
+      <div className="relative aspect-4/3 bg-surface overflow-hidden">
         <img
           src={image ?? "/placeholder.png"}
           alt={module.title}
@@ -35,27 +36,28 @@ export function ModuleCard({
           </div>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="font-display text-lg font-semibold leading-tight" dangerouslySetInnerHTML={{ __html: module.title }} >
+
+      {/* Text — smaller padding, pushed slightly lower */}
+      <div className="px-4 pt-3 pb-3">
+        <h3 className="font-display text-base font-semibold leading-tight">
+          {module.title}
         </h3>
         {done > 0 && !locked && (
-          <div className="mt-3">
+          <div className="mt-2.5">
             <ProgressBar value={percent} />
             <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5">
-              <span>
-                {done} of {total} lessons
-              </span>
+              <span>{done} of {total} lessons</span>
               <span className="font-semibold text-primary">{percent}%</span>
             </div>
           </div>
         )}
         {done === 0 && !locked && (
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             {total > 0 ? `${total} lessons` : "No lessons yet"}
           </p>
         )}
         {locked && (
-          <p className="mt-3 text-xs text-muted-foreground">Pro members only</p>
+          <p className="mt-2 text-xs text-muted-foreground">Pro members only</p>
         )}
       </div>
     </div>

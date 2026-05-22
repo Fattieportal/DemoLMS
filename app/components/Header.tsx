@@ -45,12 +45,13 @@ const Header = () => {
             </button>
         </div>
         <Link to="/" className="flex items-center gap-1.5">
-          <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">
+          <img src="./images/logo-full.svg" alt={APP_NAME} className="h-7" />
+          {/* <span className="h-7 w-7 rounded-lg gradient-warm flex items-center justify-center">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </span>
           <span className="font-display text-lg font-bold tracking-tight">
             {APP_NAME}
-          </span>
+          </span> */}
         </Link>
         <Link
           to="/profile"
@@ -60,7 +61,7 @@ const Header = () => {
             <img
               src={user.avatar}
               alt={user.display_name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover border border-secondary/60 rounded-full"
             />
           ) : (
             initials
